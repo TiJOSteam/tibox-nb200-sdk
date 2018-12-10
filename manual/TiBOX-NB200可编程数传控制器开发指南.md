@@ -1,4 +1,4 @@
-# TiBOX-NB200  NB-IoT可编程数传控制器开发指南
+# TiBOX-NB200 NB-IoT可编程数传控制器开发指南
 
 TiBOX-NB200是钛云物联基于钛极OS(TiJOS)物联网操作系统开发的NB-IoT可编程数传控制器， 用户可通过Java语言开发控制器内部的应用和控制逻辑以及与云平台交互过程。 
 
@@ -40,13 +40,13 @@ TiDevManager可通过Eclipse的菜单启动。
 
 ![1538275622754](.\img\1538275622754.png)
 
-## 电信OceanConnect云平台接入指南
+## CoAP协议接入
 
-TiBOX-NB200 提供了电信OceanConnect平台接入例程， 在进行该例程的测试之前，请先通过中国电信申请相关的平台账号并在平台中进行配置， 具体请参考<中国电信OceanConnect云平台接入向导>文档。
+TiBOX-NB200 提供了标准CoAP协议接入接口，通过POST/GET来与云端进行数据交互， 您可自行搭建CoAP服务器或使用钛极云平台来进行测试验证.
 
 ## UDP协议接入
 
-用户自己的服务器也可通过NB-IoT 的UDP协议进行接入， 由于UDP协议不保证数据的可靠传输，需要用户自行处理，同时数据量不宜过大
+用户自己的服务器也可通过NB-IoT 的UDP协议进行接入， 由于UDP协议不保证数据的可靠传输，需要用户自行处理，同时数据量不宜大于512.
 
 ## TiBOX-NB200  编程开发说明
 
@@ -68,19 +68,20 @@ TiBOX.NB200类提供了TiBOX-N100所支持的硬件资源访问， 包括RS485, 
 | TiSerialPort getRS485(int baudRate, int dataBitNum, int stopBitNum, int parity) | 获取RS485接口， 参数：波特率，数据位，停止位，校验位         |
 | TiSerialPort getRS232(int baudRate, int dataBitNum, int stopBitNum, int parity) | 获取RS232接口，参数：波特率，数据位，停止位，校验位          |
 | **CoAP网络操作**                                             |                                                              |
-| static void networkCoAPConnect(String url)                   | 连接NB-IOT云平台， 建议使用电信云。serverIp/port: 电信云平台IP 及端口， 使用使用UDP协议，请调用UDP相关接口 |
-| static void networkCoAPPOST(String uri, String jsonText)     | 发送数据到云平台, dataBuffer 待发送数据                      |
-| static String networkCoAPGET(String uri)                     |                                                              |
-| String networkGetOTARequest(String OTAUri)                   |                                                              |
-| static void networkOTA(String productKey, String otaAppName, String otaRequest) |                                                              |
+| static void networkCoAPConnect(String url)                   | 通过CoAP协议连接云平台, url格式 coap://host:port   例如 coap://coap.tijcloud.com:5683 |
+| static void networkCoAPPOST(String uri, String jsonText)     | POST发送数据到云平台,uri 为CoAP资源路径， jsonText为 待发送数据 |
+| static String networkCoAPGET(String uri)                     | GET从云端获取数据, uri为CoAP资源路径, 返回云端数据           |
+| **应用OTA空中升级**                                          |                                                              |
+| String networkGetOTARequest(String OTAUri)                   | 从云端获取OTA升级参数， OTAUri为云端OTA请求资源路径，通过JSON格式返回OTA升级参数 |
+| static void networkOTA(String productKey, String otaAppName, String otaRequest) | 执行空中升级OTA， productKey: 产品标识， otaAppName： 本机OTA应用名称  otaRequest 通过networkGetOTARequest返回的OTA请求信息， 升级成功后将自动运行新版本应用 |
 | **UDP网络操作**                                              |                                                              |
 | 基于标准JAVA DatagramSocket 对象即可                         |                                                              |
 |                                                              |                                                              |
 | **LED灯控制**                                                |                                                              |
-| void turnOnLED(int id)                                       | 打开指定LED灯, id = 0 : LED 灯， id=1 : NET灯                |
-| void turnOffLED(int id)                                      | 关闭指定LED灯, id = 0 : LED 灯， id=1 : NET灯                |
-| void startFlashLED(int id)                                   | 闪烁指定LED灯, id = 0 : LED 灯， id=1 : NET灯                |
-| void stopFlashLED(int id)                                    | 停止指定LED灯, id = 0 : LED 灯， id=1 : NET灯                |
+| void turnOnLED()                                             | 打开LED灯                                                    |
+| void turnOffLED()                                            | 关闭LED灯                                                    |
+| void startFlashLED()                                         | 闪烁LED灯                                                    |
+| void stopFlashLED()                                          | 停止闪烁LED灯                                                |
 |                                                              |                                                              |
 
 #### TiSerialPort  串口类主要方法使用说明
