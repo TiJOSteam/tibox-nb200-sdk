@@ -1,15 +1,104 @@
 
- 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import tibox.NB200;
+import tijos.framework.component.serialport.TiSerialPort;
+import tijos.framework.devicecenter.TiUART;
+import tijos.framework.util.Delay;
 
- 
 /**
- * NB-IoT UDP 例程
- * 由于电信对数据转发服务器有限制, 请使用中国移动NB-IoT物联卡进行测试
+ * 232采集线程类
+ * 
+ * @author tijos
+ *
+ */
+class SerialPort2UDP extends Thread {
+
+	String host;
+	int port;
+	DatagramSocket udpSocket;
+	TiSerialPort rs232; 
+	
+	public SerialPort2UDP(String host, int port, DatagramSocket udpSocket, TiSerialPort rs232 ) {
+
+		this.host = host;
+		this.port = port;
+		this.udpSocket = udpSocket;
+		this.rs232 = rs232;
+	}
+
+	@Override
+	public void run() {
+
+		while (true) {
+			try {
+				byte[] buff = rs232.read(50);
+				if (buff != null) {
+					System.out.println("len " + buff.length + " data:" + new String(buff));
+					DatagramPacket dp = new DatagramPacket(buff, buff.length, InetAddress.getByName(host), port);
+					udpSocket.send(dp);
+					Delay.msDelay(10);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+}
+
+/**
+ * UDP采集线程类
+ * 
+ * @author tijos
+ *
+ */
+class UDP2SerialPort extends Thread {
+
+	String host;
+	int port;
+	
+	DatagramSocket udpSocket;
+	TiSerialPort rs232; 
+
+	public UDP2SerialPort(String host, int port, DatagramSocket udpSocket, TiSerialPort rs232) {
+
+		this.host = host;
+		this.port = port;
+		this.udpSocket = udpSocket;
+		this.rs232 = rs232;
+	}
+
+	@Override
+	public void run() {
+		byte[] msg = new byte[1024];
+		try {
+			DatagramPacket dp = new DatagramPacket(msg, msg.length, InetAddress.getByName(host), port);
+			while (true) {
+				try {
+					udpSocket.receive(dp);
+					System.out.println("udp data len " + dp.getLength());
+					rs232.write(dp.getData(), 0, dp.getLength());
+					Delay.msDelay(10);
+					
+					dp.setLength(msg.length);
+				} catch (Exception e) {
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+	}
+
+}
+
+/**
+ * NB-IoT UDP 串号/UDP透传例程
+ * 
  * @author TiJOS
  *
  */
@@ -17,47 +106,38 @@ public class NB200UDPSample {
 
 	public static void main(String[] args) {
 
-	try {
-			//启动并注册NB网络
+		try {
+
+			NB200.startFlashLED();
+			// 启动并注册NB网络
 			NB200.networkStartup();
+
+			NB200.stopFlashLED();
+			NB200.turnOnLED();
 			
-			//以下与标准JAVA UDP Socket使用方式一致
-		   	System.out.println("UdpDemo start...");
-			DatagramSocket udpSocket  = null;
-	    	try
-	    	{
-		    		
-	    		//UDP Socket
-				udpSocket = new DatagramSocket();
-		        String host = "10.111.2.11";
-		        int port = 8080;
-		        
-		        byte [] msg = ("Hello Server").getBytes();
-		       
-		        DatagramPacket dp = new DatagramPacket(msg, msg.length, InetAddress.getByName(host), port);
-		        udpSocket.send(dp);
-		        
-		        byte [] buffer = new byte[1024];
-	        	dp.setData(buffer);
-	        	dp.setAddress(null);
-		        	
-	            udpSocket.receive(dp);
-		            
-	            String info = new String(dp.getData(), 0, dp.getLength());
-	            System.out.println("Received: " + info);
-	            System.out.println("Remote :" + dp.getAddress().getHostAddress());
-	            
-	    	}
-	    	catch(Exception e)
-	    	{
-	    		e.printStackTrace();
-	    	}
-	    	finally
-	    	{
-	    		udpSocket.close();
-	    	}
-			
-			
+			// 以下与标准JAVA UDP Socket使用方式一致
+			System.out.println("Serial2UDP start...");
+
+			String host = "10.11.123.4";
+			int port = 1234;
+
+			DatagramSocket udpSocket = new DatagramSocket();
+			TiSerialPort rs232 = NB200.getRS232(9600, 8, 1, TiUART.PARITY_NONE);
+
+			// 创建UDP采集线程对象
+			Thread threadUDP = new UDP2SerialPort(host, port, udpSocket, rs232);
+
+			// 创建232采集线程对象
+			Thread thread232 = new SerialPort2UDP(host, port, udpSocket, rs232);
+
+			// 启动两个线程
+			threadUDP.start();
+			thread232.start();
+
+			int num = 60;
+			while (num -- > 0) {
+				Delay.msDelay(1000);
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
