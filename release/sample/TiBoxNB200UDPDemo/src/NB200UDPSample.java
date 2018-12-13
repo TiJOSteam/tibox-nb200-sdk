@@ -134,8 +134,7 @@ public class NB200UDPSample {
 			threadUDP.start();
 			thread232.start();
 
-			int num = 60;
-			while (num -- > 0) {
+			while (true) {
 				Delay.msDelay(1000);
 			}
 		} catch (Exception ex) {
