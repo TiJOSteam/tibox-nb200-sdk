@@ -146,15 +146,15 @@ TiBOX.NB200类提供了TiBOX-N100所支持的硬件资源访问， 包括RS485, 
 
    ```java
    //MODBUS 客户端  
-   //通讯超时2000 ms 读取数据前等待5ms
-   ModbusClient modbusRtu = new ModbusClient(rs485, 2000, 5);
+   //通讯超时2000 ms 
+   ModbusClient modbusRtu = new ModbusClient(rs485);
    ```
 
 4. 连接NB-IOT网络
 
     ```java
        //COAP服务器URL及端口
-       String serverUrl = "coap://coap.tijcloud.com:5683";
+       String serverUrl = "coap://coap.tijos.net:5683";
        //连接服务器
        NB200.networkCoAPConnect(serverUrl);
     
@@ -189,7 +189,7 @@ TiBOX.NB200类提供了TiBOX-N100所支持的硬件资源访问， 包括RS485, 
 
 7. ```java
    //与设备相关URI
-   String productKey = "TiBox-NB100";
+   String productKey = "TiBox-NB200";
    String dataUri = "/topic/" + product + "/" + NB200.networkGetIMEI() + "/data";
    
    //数据格式使用JSON格式
